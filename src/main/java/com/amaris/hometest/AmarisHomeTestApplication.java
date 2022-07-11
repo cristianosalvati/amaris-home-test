@@ -1,4 +1,4 @@
-package com.amaris.test;
+package com.amaris.hometest;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class AmarisHomeTestApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(AmarisHomeTestApplication.class, args);
+		SpringApplication.run(AmarisHomeTestApplication.class, args);	
 	}
-
+	
 }

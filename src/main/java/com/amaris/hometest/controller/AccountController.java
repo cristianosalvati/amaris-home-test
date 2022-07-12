@@ -1,5 +1,7 @@
 package com.amaris.hometest.controller;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,34 +10,37 @@ import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.amaris.hometest.datatransferobject.AbstractDto;
 import com.amaris.hometest.datatransferobject.AccountDTO;
 import com.amaris.hometest.datatransferobject.BalanceDTO;
 import com.amaris.hometest.datatransferobject.PaymentDTO;
 import com.amaris.hometest.datatransferobject.TransactionDTO;
-import com.amaris.hometest.exception.ConstraintsViolationException;
+import com.amaris.hometest.exception.ClientException;
 import com.amaris.hometest.exception.EntityNotFoundException;
+import com.amaris.hometest.exception.ErrorException;
+import com.amaris.hometest.exception.MapperException;
 import com.amaris.hometest.rest.client.SandboxApiClient;
-import com.amaris.hometest.rest.exception.ClientException;
-import com.amaris.hometest.service.BalanceService;
-import com.amaris.hometest.service.PaymentService;
-import com.amaris.hometest.service.TransactionService;
-
-import okhttp3.OkHttpClient;
-import okhttp3.Response;
+import com.amaris.hometest.service.BalanceServiceI;
+import com.amaris.hometest.service.PaymentServiceI;
+import com.amaris.hometest.service.TransactionServiceI;
+import com.amaris.hometest.util.EntityMapper;
 
 /**
  * </p>
  * Un controller Rest che permette di gestire le seguenti operazioni sul conto:
- * - Lettura saldo;
- * - Lista di transazioni
- * - Bonifico;
+ * - Lettura saldo (BALANCE); 
+ * - Lista di transazioni (TRANSACTION: TO BE DEFINE)
+ * - Bonifico (PAYMENT: TBD);
  * <p/>
  * 
  * @author cristiano 
@@ -45,57 +50,93 @@ import okhttp3.Response;
 @RequestMapping("/rest/v1/account")
 public class AccountController {
 
+	@Value("${application.configuration.datePattern}")
+	private String datePattern;
+	
 	private static final Logger LOG = LoggerFactory.getLogger(AccountController.class);
 	
-	private static SandboxApiClient apiClient = new SandboxApiClient();
+	@Autowired
+	private SandboxApiClient apiClient;
 	
-	private final BalanceService balanceService;
-	private final PaymentService paymentService;
-	private final TransactionService transactionService	;
+	private final BalanceServiceI balanceService;
+	private final PaymentServiceI paymentService;
+	private final TransactionServiceI transactionService	;
 	
 	@Autowired
-	public AccountController(final BalanceService balanceService, 
-			final PaymentService paymentService,
-			final TransactionService transactionService) {
+	public AccountController(
+			final BalanceServiceI balanceService, 
+			final PaymentServiceI paymentService,
+			final TransactionServiceI transactionService
+			) {
 		
 		this.balanceService = balanceService;
 		this.paymentService = paymentService;
 		this.transactionService = transactionService;
 	}
 	
+/**
+ * 	Recupero dei dati di riepilogo del saldo
+ *  @param accountId	the unique id related to the account
+ *  @throws EntityNotFoundException
+ *  @throws ClientException 
+ *  @throws ErrorException 
+ *  @throws MapperException 
+ **/
 	@GetMapping("/balance/{accountId}")
-	public BalanceDTO getBalance(@PathVariable long accountId) throws EntityNotFoundException
+	public BalanceDTO getBalance(@PathVariable long accountId) throws EntityNotFoundException, ClientException, ErrorException, MapperException
 	{
-		try {
-			Response response = apiClient.balance();
-			System.out.println(response.body().toString());
-		}catch(ClientException e) {
-			
-		}
-	    return new BalanceDTO(); //CarMapper.makeBalanceDTO(service.findById(accountId));
+			String response = apiClient.balance(accountId);
+			AbstractDto responseDto = EntityMapper.makeBalanceDto(response, datePattern);
+			if (responseDto.getStatus().equals("OK"))
+				return (BalanceDTO)responseDto;
+			else throw new ErrorException(responseDto.getStatus(), responseDto.getMessage());
+		
 	}
 	
+/**
+ * 	Definizione e registrazione di un bonifico
+ *  @param accountDTO	the account informations
+ *  @throws EntityNotFoundException
+ *  @throws ClientException 
+ **/
 	@PostMapping("payment-transfer/{accountId}")
-//	@ResponseStatus(HttpStatus.CREATED)
-	public PaymentDTO paymentTranfer(@Valid @RequestBody AccountDTO accountDTO) throws EntityNotFoundException
+	@ResponseStatus(HttpStatus.CREATED)
+	public PaymentDTO paymentTranfer(@Valid @RequestBody AccountDTO accountDTO) throws EntityNotFoundException, ClientException
 	{
 		try {
-			Response response = apiClient.payment();
-			System.out.println(response.body().toString());
+			String response = apiClient.payment(accountDTO);
+//			TODO: implementare logica di verifica e validazione della risposta
+//			...
 		}catch(ClientException e) {
-			
+//			LOG.error(e.getMessage());
+			throw e;
 		}
-	    return new PaymentDTO(); //Mapper.makePaymentDTO(service.findById(accountDTO));
+	    return new PaymentDTO(); 
 	}
-	
-	@GetMapping("/transactions/{accountId}")
-	public List<TransactionDTO> transactions(@PathVariable long accountId) throws ConstraintsViolationException
+
+/**
+ * 	Recupero delle transazioni relative ad un certo Account
+ *  @param accountId	the unique id related to the account
+ *  @param startDate   	the starting date to retrieve informations 
+ *  @param endDate   	the ending date to retrieve informations 
+ *  @throws MapperException 
+ *  @throws EntityNotFoundException
+ *  @throws ClientException 
+ **/
+	@GetMapping("/transactions/{accountId}/{startDate}/{endDate}")
+	public List<TransactionDTO> transactions(@PathVariable long accountId, @PathVariable String startDate, @PathVariable String endDate) throws EntityNotFoundException, MapperException, ClientException
 	{
 		try {
-			Response response = apiClient.transaction();
-			System.out.println(response.body().toString());
-		}catch(ClientException e) {
+			String response = apiClient.transaction(accountId,
+					new SimpleDateFormat(datePattern).parse(startDate),
+					new SimpleDateFormat(datePattern).parse(endDate));
 			
+//			TODO: implementare logica di verifica e validazione della risposta.
+//			Gestire e validare il formato data in input (2022-07-10)
+		}catch(ClientException e) {
+			throw e;
+		} catch (ParseException e) {
+			throw new MapperException(e);
 		}
 	    return new ArrayList<TransactionDTO>();
 	}

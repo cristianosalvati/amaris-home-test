@@ -9,13 +9,8 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 
 /**
  * <p>
- * Task 4 (optional)
- * This task is _voluntarily_, if you can't get enough of hacking tech challenges, implement security. 
- * Secure the API so that authentication is needed to access it. The details are up to you.
- * 
- * SEE API CREDENTIANL IN APPLICATION.PROPERTIES FILE
- * <p/>
- * 
+ *	A security configurator to enable/disable autorization rules on API 
+ *  </p>
  * @author cristiano
  */
 
@@ -27,11 +22,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter
     @Override
     protected void configure(HttpSecurity http) throws Exception 
     {
-        http
-         .csrf().disable()
+        http.headers().frameOptions().sameOrigin();
+        	
+        http.csrf().disable()
          .authorizeRequests()
          .antMatchers("*/rest/*").permitAll();
-//        TODO 
+
+//        TODO extend security parameter
+//        .antMatchers("*/rest/*").permitAll();
 //        .anyRequest()
 //        .authenticated().and().httpBasic();
     }

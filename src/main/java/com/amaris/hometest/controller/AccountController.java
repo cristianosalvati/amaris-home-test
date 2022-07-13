@@ -141,4 +141,12 @@ public class AccountController {
 	    return new ArrayList<TransactionDTO>();
 	}
 	
+	public void setApiClient(SandboxApiClient apiClient) {
+		if (this.apiClient == null)
+			this.apiClient = apiClient;
+	}
+	
+	public SandboxApiClient getApiClient() {
+		return this.apiClient;
+	}
 }

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import net.bytebuddy.description.type.TypeDefinition.SuperClassIterator;
@@ -29,6 +30,7 @@ import net.bytebuddy.description.type.TypeDefinition.SuperClassIterator;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
 @Setter
+@EqualsAndHashCode
 public class BalanceDTO extends AbstractDto{
 	
 	@NotNull(message = "Date can not be null!")

@@ -20,7 +20,7 @@ public class EntityMapper {
 		try {
 			Map<String, Object> entity = (new ObjectMapper()).readValue(json, Map.class);
 			BalanceDTO.BalanceDTOBuilder builder = new BalanceDTOBuilder();
-			if (!entity.get("status").equals("OK")) {
+			if (entity.get("status") == null || !entity.get("status").equals("OK")) {
 				return new ErrorDTO(entity.get("status").toString(), 
 						entity.get("error").toString());
 			}else {

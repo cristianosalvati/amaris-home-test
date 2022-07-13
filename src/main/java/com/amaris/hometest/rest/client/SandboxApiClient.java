@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 import com.amaris.hometest.datatransferobject.AccountDTO;
 import com.amaris.hometest.exception.ClientException;
 
+import lombok.Getter;
+import lombok.Setter;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -22,6 +24,8 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 @Component
+@Getter
+@Setter
 public class SandboxApiClient {
 
 	@Value("${application.configuration.client.sandbox.connection-timeout}")
